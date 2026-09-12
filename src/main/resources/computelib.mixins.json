@@ -1,0 +1,22 @@
+{
+  "required": true,
+  "package": "dev.nonamecrackers2.computelib.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+	"rendersystem.MixinGpuDevice",
+	"rendersystem.MixinCommandEncoder",
+	"rendersystem.MixinDeviceFeatures",
+	"rendersystem.MixinDeviceLimits",
+	"rendersystem.gl.MixinGlCommandEncoder",
+	"rendersystem.gl.MixinGlDevice",
+	"rendersystem.gl.MixinGlUtil",
+	"rendersystem.vulkan.MixinVulkanDevice",
+	"MixinShaderManagerAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}
