@@ -15,7 +15,6 @@ import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.resources.Identifier;
 
 //TODO Event driven so users can define
-//TODO Use ShaderDefines properly in cube_mesh.comp
 public class ComputeLibTestPipelines
 {
 	private static final Map<Identifier, ComputePipeline> PIPELINES = new HashMap<>();

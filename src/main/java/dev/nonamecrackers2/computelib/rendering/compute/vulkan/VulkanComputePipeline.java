@@ -18,9 +18,6 @@ import com.mojang.blaze3d.vulkan.VulkanUtils;
 import dev.nonamecrackers2.computelib.rendering.pipeline.ComputePipeline;
 import dev.nonamecrackers2.computelib.rendering.systems.CompiledComputePipeline;
 
-//TODO Extend VulkanBindGroupLayout to support SSBOs (VK12.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-//TODO Extend IntermediaryShaderModule to add support for bindings of SSBOs (Spvc.SPVC_RESOURCE_TYPE_STORAGE_BUFFER)
-//TODO Need a copy of GlslCompiler to create IntermediaryShaderModule's for compute shaders specifically (Shaderc.shaderc_compute_shader)
 public record VulkanComputePipeline(ComputePipeline underlying, VulkanDevice device, long pipelineId, long pipelineLayout, VulkanBindGroupLayout layout, long shaderModule) implements CompiledComputePipeline, Destroyable
 {
 	public static VulkanComputePipeline compile(VulkanDevice device, VulkanBindGroupLayout layout, ComputePipeline pipeline, long shaderModule)

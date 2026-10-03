@@ -135,7 +135,7 @@ public class GlComputeProgram implements AutoCloseable
 	@Override
 	public void close()
 	{
-		//TODO Releasing shader buffer bindings
+		this.ssbosByName.values().forEach(BindingManager::freeShaderStorageBinding);
 		this.uniformsByName.values().forEach(Uniform::close);
         GlStateManager.glDeleteProgram(this.programId);
 	}

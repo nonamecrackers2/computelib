@@ -20,8 +20,6 @@ import dev.nonamecrackers2.computelib.rendering.pipeline.gl.GlComputePass;
 import dev.nonamecrackers2.computelib.rendering.systems.CommandEncoderBackendExtension;
 import dev.nonamecrackers2.computelib.rendering.systems.DeviceFeaturesExtension;
 
-//TODO Be able to modify SSBOs without creating a compute pass, compute pass should delegate to these more global methods
-//TODO Memory barrier extraction, not tied to a compute pass
 @Mixin(targets = "com.mojang.blaze3d.opengl.GlCommandEncoder")
 public class MixinGlCommandEncoder implements CommandEncoderBackendExtension
 {
