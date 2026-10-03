@@ -14,9 +14,10 @@ import org.lwjgl.opengl.GL43;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.Uniform;
 import com.mojang.blaze3d.pipeline.BindGroupLayout;
+import com.mojang.blaze3d.shaders.UniformType;
 
-import dev.nonamecrackers2.computelib.rendering.BindingManager;
-import dev.nonamecrackers2.computelib.rendering.pipeline.BindingSupplier;
+import dev.nonamecrackers2.computelib.rendering.systems.ExtendedUniformTypes;
+import dev.nonamecrackers2.computelib.rendering.systems.gl.BindingManager;
 import net.minecraft.client.renderer.ShaderManager;
 
 public class GlComputeProgram implements AutoCloseable
@@ -25,7 +26,9 @@ public class GlComputeProgram implements AutoCloseable
 	public static final GlComputeProgram INVALID_PROGRAM = new GlComputeProgram(-1, "invalid");
 	// We can't support simple uniforms since they don't exist in Vulkan
 	private final Map<String, Uniform> uniformsByName = new HashMap<>();
-	private final Map<String, Integer> ssboBindingsByName = new HashMap<>();
+	// In OpenGL, SSBO bindings are global instead of per-shader like Vulkan, so we need
+	// to keep track of which ones we are using and free them when we are done
+	private final Map<String, Integer> ssbosByName = new HashMap<>();
     private final int programId;
     private final String debugLabel;
 
@@ -55,7 +58,7 @@ public class GlComputeProgram implements AutoCloseable
     	return new GlComputeProgram(programId, debugLabel);
     }
     
-    public void setupBindGroupLayoutsAndSSBOs(List<BindGroupLayout> layouts, Map<String, BindingSupplier> ssbos)
+    public void setupBindGroupLayoutsAndSSBOs(List<BindGroupLayout> layouts)
     {
     	// Portion copied from GlProgram
 		BindGroupLayout.ensureCompatible(layouts);
@@ -70,40 +73,39 @@ public class GlComputeProgram implements AutoCloseable
 
 			System.out.println(uniformName);
 			
-			Uniform uniform = switch (uniformDescription.type())
-			{
-			case UNIFORM_BUFFER -> 
+			UniformType type = uniformDescription.type();
+			if (type == UniformType.UNIFORM_BUFFER)
 			{
 				int index = GL33C.glGetUniformBlockIndex(this.programId, uniformName);
-				if (index == -1)
-				{
-					yield null;
-				}
-				else
+				if (index != -1)
 				{
 					int uboBinding = nextUboBinding++;
 					GL33C.glUniformBlockBinding(this.programId, index, uboBinding);
-					yield new Uniform.Ubo(uboBinding);
+					this.uniformsByName.put(uniformName, new Uniform.Ubo(uboBinding));
 				}
 			}
-			case TEXEL_BUFFER -> 
+			else if (type == ExtendedUniformTypes.STORAGE_BUFFER)
+			{
+				int index = GL43.glGetProgramResourceIndex(this.programId, GL43.GL_SHADER_STORAGE_BLOCK, uniformName);
+				if (index != -1)
+				{
+					int binding = BindingManager.getAvailableShaderStorageBinding();
+					GL43.glShaderStorageBlockBinding(this.programId, index, binding);
+					this.ssbosByName.put(uniformName, binding);
+					BindingManager.useShaderStorageBinding(binding);
+				}
+			}
+			else if (type == UniformType.TEXEL_BUFFER)
 			{
 				int location = GlStateManager._glGetUniformLocation(this.programId, uniformName);
 				if (location == -1)
 				{
 					LOGGER.warn("{} shader program does not use utb {} defined in the pipeline. This might be a bug.", this.debugLabel, uniformName);
-					yield null;
+					continue;
 				}
-				else
-				{
-					int samplerIndex = nextSamplerIndex++;
-					yield new Uniform.Utb(location, samplerIndex, Objects.requireNonNull(uniformDescription.gpuFormat()));
-				}
-			}
-			};
-			if (uniform != null)
-			{
-				this.uniformsByName.put(uniformName, uniform);
+				
+				int samplerIndex = nextSamplerIndex++;
+				this.uniformsByName.put(uniformName, new Uniform.Utb(location, samplerIndex, Objects.requireNonNull(uniformDescription.gpuFormat())));
 			}
 		}
 
@@ -127,26 +129,6 @@ public class GlComputeProgram implements AutoCloseable
 			String name = GL33C.glGetActiveUniformBlockName(this.programId, i);
 			if (!this.uniformsByName.containsKey(name))
 				LOGGER.warn("Found unknown and unsupported uniform {} in {} compute shader", name, this.debugLabel);
-		}
-		//
-		
-		// SSBOs
-		for (var entry : ssbos.entrySet())
-		{
-			String name = entry.getKey();
-			
-			int index = GL43.glGetProgramResourceIndex(this.programId, GL43.GL_SHADER_STORAGE_BLOCK, name);
-			if (index == -1)
-			{
-				LOGGER.warn("Could not find SSBO with name '" + name + "'");
-				continue;
-			}
-			
-			int binding = entry.getValue().fetchBinding();
-			GL43.glShaderStorageBlockBinding(this.programId, index, binding);
-			BindingManager.useShaderStorageBinding(binding);
-			
-			this.ssboBindingsByName.put(name, binding);
 		}
     }
     
@@ -181,6 +163,6 @@ public class GlComputeProgram implements AutoCloseable
 	
 	public Map<String, Integer> getSSBOs()
 	{
-		return this.ssboBindingsByName;
+		return this.ssbosByName;
 	}
 }

@@ -19,7 +19,7 @@ import net.minecraft.resources.Identifier;
  * Shader defines is a supplier since new defines will be wanted
  * every shader reload
  */
-public record ComputePipeline(Identifier id, Identifier shaderLocation, Supplier<ShaderDefines> shaderDefines, List<BindGroupLayout> bindGroupLayouts, Map<String, BindingSupplier> ssbosByBinding)
+public record ComputePipeline(Identifier id, Identifier shaderLocation, Supplier<ShaderDefines> shaderDefines, List<BindGroupLayout> bindGroupLayouts)
 {
 	public static ComputePipeline.Builder builder(Identifier id)
 	{
@@ -37,7 +37,6 @@ public record ComputePipeline(Identifier id, Identifier shaderLocation, Supplier
 		private final Identifier shaderLocation;
 		private Supplier<ShaderDefines> shaderDefines = () -> ShaderDefines.EMPTY;
 		private List<BindGroupLayout> bindGroupLayouts = Lists.newArrayList();
-		private Map<String, BindingSupplier> ssbosByBinding = Maps.newHashMap();
 		
 		private Builder(Identifier id, Identifier shaderLocation)
 		{
@@ -57,26 +56,9 @@ public record ComputePipeline(Identifier id, Identifier shaderLocation, Supplier
 			return this;
 		}
 		
-		public ComputePipeline.Builder withSSBO(String name, BindingSupplier binding)
-		{
-			if (this.ssbosByBinding.containsKey(name))
-				throw new IllegalArgumentException("SSBO with name '" + name + "' already registered");
-			
-			this.ssbosByBinding.put(name, binding);
-			
-			return this;
-		}
-		
-		public ComputePipeline.Builder withSSBO(String... names)
-		{
-			for (String name : names)
-				this.withSSBO(name, BindingSupplier.NEXT_AVAILABLE);
-			return this;
-		}
-		
 		public ComputePipeline build()
 		{
-			return new ComputePipeline(this.id, this.shaderLocation, this.shaderDefines, ImmutableList.copyOf(this.bindGroupLayouts), ImmutableMap.copyOf(this.ssbosByBinding));
+			return new ComputePipeline(this.id, this.shaderLocation, this.shaderDefines, ImmutableList.copyOf(this.bindGroupLayouts));
 		}
 	}
 }

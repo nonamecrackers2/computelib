@@ -1,4 +1,4 @@
-package dev.nonamecrackers2.computelib.rendering;
+package dev.nonamecrackers2.computelib.rendering.systems.gl;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

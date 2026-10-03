@@ -1,11 +1,16 @@
 package dev.nonamecrackers2.computelib.rendering.systems;
 
-import com.mojang.blaze3d.systems.GpuDeviceBackend;
+import java.util.function.Supplier;
 
 import dev.nonamecrackers2.computelib.rendering.compute.pass.ComputePass;
-import dev.nonamecrackers2.computelib.rendering.compute.pass.ComputePassBackend;
 
 public interface CommandEncoderExtension
 {
-	ComputePass createComputePass();
+	boolean isInComputePass();
+	
+	ComputePass createComputePass(Supplier<String> label);
+	
+	void submitComputePass();
+	
+	void memoryBarrier(int srcStage, int srcAccessMask, int dstStage, int dstAccessMask);
 }

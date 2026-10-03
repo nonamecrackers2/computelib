@@ -10,6 +10,7 @@ import com.mojang.blaze3d.shaders.UniformType;
 
 import dev.nonamecrackers2.computelib.ComputeLib;
 import dev.nonamecrackers2.computelib.rendering.pipeline.ComputePipeline;
+import dev.nonamecrackers2.computelib.rendering.systems.ExtendedUniformTypes;
 import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.resources.Identifier;
 
@@ -21,8 +22,7 @@ public class ComputeLibTestPipelines
 	
 	public static final ComputePipeline TEST = register(ComputePipeline.builder(ComputeLib.id("compute/test"))
 			.withShaderDefines(() -> ShaderDefines.builder().build())
-			.withBindGroupLayout(BindGroupLayout.builder().withUniform("Value", UniformType.UNIFORM_BUFFER).build())
-			.withSSBO("Out")
+			.withBindGroupLayout(BindGroupLayout.builder().withUniform("Value", UniformType.UNIFORM_BUFFER).withUniform("Out", ExtendedUniformTypes.STORAGE_BUFFER).build())
 			.build());
 	
 	private static ComputePipeline register(ComputePipeline pipeline)

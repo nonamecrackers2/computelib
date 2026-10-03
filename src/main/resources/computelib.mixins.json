@@ -7,10 +7,17 @@
 	"rendersystem.MixinCommandEncoder",
 	"rendersystem.MixinDeviceFeatures",
 	"rendersystem.MixinDeviceLimits",
+	"rendersystem.MixinUniformType",
 	"rendersystem.gl.MixinGlCommandEncoder",
 	"rendersystem.gl.MixinGlDevice",
 	"rendersystem.gl.MixinGlUtil",
+	"rendersystem.vulkan.MixinVulkanCommandEncoder",
 	"rendersystem.vulkan.MixinVulkanDevice",
+	"rendersystem.vulkan.MixinGlslCompiler",
+	"rendersystem.vulkan.MixinIntermediaryShaderModule",
+	"rendersystem.vulkan.MixinVulkanBindGroupLayout",
+	"rendersystem.vulkan.MixinVulkanBindGroupEntryType",
+	"rendersystem.vulkan.MixinVulkanConst",
 	"MixinShaderManagerAccessor"
   ],
   "injectors": {

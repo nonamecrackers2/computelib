@@ -9,7 +9,6 @@ import org.spongepowered.asm.mixin.Unique;
 
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
-import com.sun.jdi.request.InvalidRequestStateException;
 
 import dev.nonamecrackers2.computelib.rendering.pipeline.ComputePipeline;
 import dev.nonamecrackers2.computelib.rendering.systems.CompiledComputePipeline;
@@ -41,6 +40,6 @@ public class MixinGpuDevice implements GpuDeviceExtension
 		if (this.backend instanceof GpuDeviceBackendExtension ext)
 			return ext;
 		else
-			throw new InvalidRequestStateException("Current GPU device backend does not support ComputeLib extensions");
+			throw new IllegalStateException("Current GPU device backend does not support ComputeLib extensions");
 	}
 }

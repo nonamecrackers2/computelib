@@ -30,6 +30,7 @@ import com.mojang.blaze3d.shaders.GpuDebugOptions;
 import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.systems.DeviceInfo;
 
+import dev.nonamecrackers2.computelib.rendering.compute.ComputeCompilationKey;
 import dev.nonamecrackers2.computelib.rendering.compute.gl.GlComputeModule;
 import dev.nonamecrackers2.computelib.rendering.compute.gl.GlComputePipeline;
 import dev.nonamecrackers2.computelib.rendering.compute.gl.GlComputeProgram;
@@ -45,7 +46,7 @@ import net.minecraft.resources.Identifier;
 public class MixinGlDevice implements GpuDeviceBackendExtension
 {
 	@Unique
-	private static final Logger LOGGER = LogManager.getLogger("simpleclouds/MixinGlDevice-EXT");
+	private static final Logger LOGGER = LogManager.getLogger("computelib/GlDeviceEXT");
 	@Shadow @Final
 	private DeviceInfo deviceInfo;
 	@Shadow @Final
@@ -53,10 +54,10 @@ public class MixinGlDevice implements GpuDeviceBackendExtension
 	@Unique
 	private final Map<ComputePipeline, GlComputePipeline> computePipelineCache = new IdentityHashMap<>();
 	@Unique
-	private final Map<GlComputeCompilationKey, GlComputeModule> computeSourceCache = new HashMap<>();
+	private final Map<ComputeCompilationKey, GlComputeModule> computeSourceCache = new HashMap<>();
 	
 	@Inject(method = "<init>", at = @At("TAIL"))
-	public void simpleclouds$deviceExtension_init(long windowHandle, ShaderSource defaultShaderSource, GpuDebugOptions debugOptions, CallbackInfo ci, @Local GLCapabilities capabilities, @Local Set<String> enabledExtensions)
+	public void computelib$deviceExtension_init(long windowHandle, ShaderSource defaultShaderSource, GpuDebugOptions debugOptions, CallbackInfo ci, @Local GLCapabilities capabilities, @Local Set<String> enabledExtensions)
 	{
 		if (capabilities.GL_ARB_compute_shader)
 			enabledExtensions.add("GL_ARB_compute_shader");
@@ -86,7 +87,7 @@ public class MixinGlDevice implements GpuDeviceBackendExtension
 	}
 	
 	@Inject(method = "close", at = @At("TAIL"))
-	public void simpleclouds$closeExtension_close(CallbackInfo ci)
+	public void computelib$closeExtension_close(CallbackInfo ci)
 	{
 		this.clearComputePipelineCache();
 	}
@@ -149,7 +150,7 @@ public class MixinGlDevice implements GpuDeviceBackendExtension
 		try 
 		{
 			GlComputeProgram program = GlComputeProgram.link(source, pipeline.id().toString());
-			program.setupBindGroupLayoutsAndSSBOs(pipeline.bindGroupLayouts(), pipeline.ssbosByBinding());
+			program.setupBindGroupLayoutsAndSSBOs(pipeline.bindGroupLayouts());
 			//TODO Debug label
 			return program;
 		} 
@@ -168,12 +169,12 @@ public class MixinGlDevice implements GpuDeviceBackendExtension
 	@Unique
 	private GlComputeModule getOrCompileComputeShader(Identifier id, ShaderDefines defines, Function<Identifier, String> shaderSource)
 	{
-		var key = new GlComputeCompilationKey(id, defines);
-		return this.computeSourceCache.computeIfAbsent(key, k -> this.compileComputeShader(key, shaderSource));
+		var key = new ComputeCompilationKey(id, defines);
+		return this.computeSourceCache.computeIfAbsent(key, k -> this.compileComputeShader(k, shaderSource));
 	}
 	
 	@Unique
-	private GlComputeModule compileComputeShader(GlComputeCompilationKey key, Function<Identifier, String> shaderSource)
+	private GlComputeModule compileComputeShader(ComputeCompilationKey key, Function<Identifier, String> shaderSource)
 	{
 		String sourceCode = shaderSource.apply(key.id());
 		if (sourceCode == null)
@@ -182,28 +183,18 @@ public class MixinGlDevice implements GpuDeviceBackendExtension
 			return GlComputeModule.INVALID_SHADER;
 		}
 		
-		String sourceWithDefines = GlslPreprocessor.injectDefines(sourceCode, key.defines);
+		String sourceWithDefines = GlslPreprocessor.injectDefines(sourceCode, key.defines());
 		int shaderId = GlStateManager.glCreateShader(GL43.GL_COMPUTE_SHADER);
 		GlStateManager.glShaderSource(shaderId, sourceWithDefines);
 		GlStateManager.glCompileShader(shaderId);
 		if (GlStateManager.glGetShaderi(shaderId, GL20.GL_COMPILE_STATUS) == 0)
 		{
 			String error = StringUtils.trim(GL20.glGetShaderInfoLog(shaderId, 32768));
-			LOGGER.error("Couldn't compile compute shader {}: {}", key.id, error);
+			LOGGER.error("Couldn't compile compute shader {}: {}", key.id(), error);
 			return GlComputeModule.INVALID_SHADER;
 		}
 		
 		//TODO Debug labels
 		return new GlComputeModule(key.id(), shaderId);
-	}
-			
-	private static record GlComputeCompilationKey(Identifier id, ShaderDefines defines)
-	{
-		@Override
-		public final String toString()
-		{
-			String str = this.id + " (compute)";
-			return !this.defines.isEmpty() ? str + " with " + this.defines : str;
-		}
 	}
 }
